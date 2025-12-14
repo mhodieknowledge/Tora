@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Torrent to BuzzHeavier</title>
+    <style>
+        body { font-family: Arial; max-width: 800px; margin: 40px auto; padding: 20px; }
+        .form-group { margin-bottom: 20px; }
+        input[type="text"] { width: 100%; padding: 10px; font-size: 16px; }
+        button { padding: 10px 20px; background: #007bff; color: white; border: none; cursor: pointer; }
+        .status-item { border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .progress-bar { height: 20px; background: #f0f0f0; border-radius: 10px; overflow: hidden; }
+        .progress-fill { height: 100%; background: #007bff; transition: width 0.5s; }
+    </style>
+</head>
+<body>
+    <h1>Torrent to BuzzHeavier</h1>
+    
+    <div class="form-group">
+        <form id="magnetForm">
+            <input type="text" name="magnet" placeholder="Paste magnet link here..." required>
+            <button type="submit">Start Download & Upload</button>
+        </form>
+    </div>
+    
+    <div id="statusContainer">
+        <h3>Active Downloads</h3>
+        <div id="statusList"></div>
+    </div>
+    
+    <script>
+        document.getElementById('magnetForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            
+            const response = await fetch('/add', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const result = await response.json();
+            alert(result.message || result.error);
+            if (response.ok) {
+                e.target.reset();
+                setTimeout(refreshStatus, 1000);
+            }
+        });
+        
+        async function refreshStatus() {
+            const response = await fetch('/status');
+            const statuses = await response.json();
+            
+            const container = document.getElementById('statusList');
+            if (Object.keys(statuses).length === 0) {
+                container.innerHTML = '<p>No active downloads.</p>';
+                return;
+            }
+            
+            let html = '';
+            for (const [id, status] of Object.entries(statuses)) {
+                html += `
+                <div class="status-item">
+                    <h4>${status.name}</h4>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${status.progress}%"></div>
+                    </div>
+                    <p>${status.progress.toFixed(1)}% | ⬇ ${(status.download_rate/1024).toFixed(1)} KB/s | 👥 ${status.num_peers} peers</p>
+                    <p><small>State: ${status.state} | Hash: ${id}</small></p>
+                </div>`;
+            }
+            container.innerHTML = html;
+        }
+        
+        // Refresh every 3 seconds
+        setInterval(refreshStatus, 3000);
+        refreshStatus();
+    </script>
+</body>
+</html>
