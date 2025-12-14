@@ -1,4 +1,5 @@
-import libtorrent as lt
+import libtorrent
+lt = libtorrent
 import time
 import os
 from buzzheavier import upload_to_buzzheavier
